@@ -5,44 +5,46 @@ using System.IO;
 using System.Windows.Forms;
 
 namespace dff2dsf {
-    public partial class frmMain : Form {
-        private readonly BindingList<FileToProcess> bindingList = new BindingList<FileToProcess>();
+    public partial class FrmMain : Form {
+        private readonly BindingList<FileToProcess> _bindingList = new BindingList<FileToProcess>();
 
-        public frmMain() {
+        public FrmMain() {
             InitializeComponent();
 
-            var source = new BindingSource(bindingList, null);
-            dataGridView1.DataSource = source;
+            var source = new BindingSource(_bindingList, null);
+            dataGridView.DataSource = source;
         }
 
         private void BtnFolder_Click(object sender, EventArgs e) {
             using (var fbd = new FolderBrowserDialog()) {
-                var result = fbd.ShowDialog();
+                DialogResult result = fbd.ShowDialog();
 
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath)) {
-                    var path = fbd.SelectedPath;
-
-                    var files = Directory.GetFiles(path);
-
-                    bindingList.Clear();
-
-                    foreach (var file in files) {
-                        if (Path.GetExtension(file).EndsWith(".dff", StringComparison.CurrentCultureIgnoreCase)) {
-                            bindingList.Add(new FileToProcess {
-                                SrcFile = file,
-                                DestFile = Path.ChangeExtension(file, ".dsf")
-                            });
-                        }
-                    }
-
-                    if (!(bindingList.Count > 0)) {
-                        MessageBox.Show("No .dff file found!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
-                    btnFolder.Enabled = false;
-                    btnConvert.Enabled = true;
-                    btnClear.Enabled = true;
+                if (result != DialogResult.OK || string.IsNullOrWhiteSpace(fbd.SelectedPath)) {
+                    return;
                 }
+
+                var path = fbd.SelectedPath;
+
+                var files = Directory.GetFiles(path);
+
+                _bindingList.Clear();
+
+                foreach (var file in files) {
+                    if (Path.GetExtension(file).EndsWith(".dff", StringComparison.CurrentCultureIgnoreCase)) {
+                        _bindingList.Add(new FileToProcess {
+                            SrcFile = file,
+                            DestFile = Path.ChangeExtension(file, ".dsf")
+                        });
+                    }
+                }
+
+                if (!(_bindingList.Count > 0)) {
+                    MessageBox.Show("No .dff file found!", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                btnFolder.Enabled = false;
+                btnConvert.Enabled = true;
+                btnClear.Enabled = true;
             }
         }
 
@@ -50,14 +52,19 @@ namespace dff2dsf {
             btnConvert.Enabled = false;
 
             var converter = "assets/dff2dsf_win32.exe";
-            if (!File.Exists(converter))
-                MessageBox.Show("no converter found!");
+            if (!File.Exists(converter)) {
+                MessageBox.Show("No converter found!");
+            }
 
             var fileIndex = 0;
-            foreach (var file in bindingList) {
+            foreach (FileToProcess file in _bindingList) {
                 try {
-                    var tempSrcFile = Path.Combine(Path.GetDirectoryName(file.SrcFile), $"{++fileIndex}.dff");
-                    var tempTargetFile = Path.Combine(Path.GetDirectoryName(file.SrcFile), $"{fileIndex}.dsf");
+                    var srcFileName = Path.GetDirectoryName(file.SrcFile);
+                    if (srcFileName == null) {
+                        continue;
+                    }
+                    var tempSrcFile = Path.Combine(srcFileName, $"{++fileIndex}.dff");
+                    var tempTargetFile = Path.Combine(srcFileName, $"{fileIndex}.dsf");
 
                     if (File.Exists(file.SrcFile))
                         File.Copy(file.SrcFile, tempSrcFile);
@@ -100,7 +107,7 @@ namespace dff2dsf {
         }
 
         private void BtnClear_Click(object sender, EventArgs e) {
-            bindingList.Clear();
+            _bindingList.Clear();
             btnFolder.Enabled = true;
             btnConvert.Enabled = false;
             btnClear.Enabled = false;

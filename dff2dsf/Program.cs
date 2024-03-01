@@ -21,7 +21,7 @@ namespace dff2dsf {
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new frmMain());
+                Application.Run(new FrmMain());
             } catch (Exception e) {
                 MessageBox.Show(e.Message);
             }
